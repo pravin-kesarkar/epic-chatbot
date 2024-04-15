@@ -13,13 +13,20 @@ from langchain.memory import ConversationBufferMemory
 bedrock_clinet=boto3.client(service_name="bedrock-runtime", region_name="us-west-2")
 model_id="anthropic.claude-3-sonnet-20240229-v1:0"
 
-def convert_img_base64(image_path):
-    with open(image_path, "rb") as image_file:
-        image_data = image_file.read()
-        base64_img = base64.b64encode(image_data).decode('utf-8')
-    return base64_img
 
-def invoke_claude_3_with_text(base64_img,user_prompt):
+def convert_img_base64_1(image_path):
+    with open(image_path[0], "rb") as image_file:
+        image_data = image_file.read()
+        base64_img_1 = base64.b64encode(image_data).decode('utf-8')
+    return base64_img_1
+
+def convert_img_base64_2(image_path):
+    with open(image_path[1], "rb") as image_file:
+        image_data = image_file.read()
+        base64_img_2 = base64.b64encode(image_data).decode('utf-8')
+    return base64_img_2
+
+def invoke_claude_3_with_text(base64_img_1,base64_img_2,user_prompt):
     # Invoke Claude 3 with the text prompt
     try:
         response = bedrock_clinet.invoke_model(
@@ -31,12 +38,21 @@ def invoke_claude_3_with_text(base64_img,user_prompt):
                     "messages": [
                         {
                             "role": "user",
-                            "content": [{"type": "text", "text": user_prompt},{
+                            "content": [{"type": "text", "text": user_prompt},
+                            {
                             "type": "image",
                             "source": {
                                 "type": "base64",
                                 "media_type": "image/png",
-                                "data": base64_img,
+                                "data": base64_img_1,
+                            },
+                        },{
+                            "type": "image",
+                            "source": {
+                                "type": "base64",
+                                "media_type": "image/png",
+
+                                "data": base64_img_2,
                             },
                         }],
                         }
@@ -66,12 +82,13 @@ def invoke_claude_3_with_text(base64_img,user_prompt):
 def handler(event):
     image_path=event["image_path"]
     user_prompt=event["user_prompt"]
-    base64_img=convert_img_base64(image_path)
-    result=invoke_claude_3_with_text(base64_img,user_prompt)
+    base64_img_1=convert_img_base64_1(image_path)
+    base64_img_2=convert_img_base64_2(image_path)
+    result=invoke_claude_3_with_text(base64_img_1,base64_img_2,user_prompt)
 
     print(f"***** IMAGE SOLUTION HERE ****** \n  {result}")
 
 
-event={"image_path":"image.png","user_prompt":" You are an AI assistant specializing in Unreal Engine game development. You can help users with a wide range of topics related to Unreal Engine including Game development concepts and workflows - Blueprints and visual scripting .Hello! Working on a game where you move in a large vehicle and while the code works, the movement is INCREDIBLY choppy, is there a smoother method to do this?"}
+event={"image_path":["image.png","import.png"],"user_prompt":"what is the image "}
 
 handler(event)
